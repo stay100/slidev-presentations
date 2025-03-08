@@ -1,0 +1,43 @@
+name: Deploy Slidev to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      
+      # Build all slides from the source directory
+      - name: Build slides
+        run: |
+          mkdir -p dist
+          for slide in $(find ../Slides -name "*.md"); do
+            slidename=$(basename "$slide" .md)
+            echo "Building $slidename"
+            npm run slidev build -- "$slide" --base /slidev-presentations/"$slidename"/ --out "dist/$slidename"
+          done
+          
+          # Create index page that links to all presentations
+          echo "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Slidev Presentations</title><style>body{font-family:system-ui,-apple-system,sans-serif;max-width:800px;margin:0 auto;padding:2rem}h1{border-bottom:1px solid #eee}ul{list-style-type:none;padding:0}li{margin:1rem 0;padding:1rem;border:1px solid #eee;border-radius:8px}a{color:#3b82f6;text-decoration:none}a:hover{text-decoration:underline}</style></head><body><h1>Slidev Presentations</h1><ul>" > dist/index.html
+          
+          for dir in dist/*/; do
+            dirname=$(basename "$dir")
+            echo "<li><a href=\"./$dirname/\">$dirname</a></li>" >> dist/index.html
+          done
+          
+          echo "</ul></body></html>" >> dist/index.html
+      
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist

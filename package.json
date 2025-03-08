@@ -1,0 +1,18 @@
+{
+  "name": "slidev-github-pages",
+  "private": true,
+  "scripts": {
+    "build": "slidev build --base /slidev-presentations/",
+    "build:specific": "slidev build --base /slidev-presentations/ --out dist",
+    "dev": "slidev",
+    "export": "slidev export"
+  },
+  "dependencies": {
+    "@slidev/cli": "^0.43.7",
+    "@slidev/theme-default": "latest",
+    "@slidev/theme-seriph": "latest"
+  },
+  "devDependencies": {
+    "playwright-chromium": "^1.39.0"
+  }
+}
