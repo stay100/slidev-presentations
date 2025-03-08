@@ -20,10 +20,10 @@ jobs:
       - name: Build slides
         run: |
           mkdir -p dist
-          for slide in $(find ../Slides -name "*.md"); do
+          for slide in $(find ./slides -name "*.md"); do
             slidename=$(basename "$slide" .md)
             echo "Building $slidename"
-            npm run slidev build -- "$slide" --base /slidev-presentations/"$slidename"/ --out "dist/$slidename"
+            npx slidev build "$slide" --base /slidev-presentations/"$slidename"/ --out "dist/$slidename"
           done
           
           # Create index page that links to all presentations
