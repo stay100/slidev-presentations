@@ -1,0 +1,102 @@
+name: Deploy Slidev to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: List slides
+        run: ls -la ./slides
+      
+      - name: Build slides
+        run: |
+          mkdir -p dist
+          
+          # Build each slide
+          for slide in ./slides/*.md; do
+            if [ -f "$slide" ]; then
+              slidename=$(basename "$slide" .md)
+              echo "Building $slidename"
+              npx slidev build "$slide" --base /slidev-presentations/"$slidename"/ --out "dist/$slidename"
+            fi
+          done
+          
+          # Create index page
+          cat > dist/index.html << EOF
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <meta charset="UTF-8">
+              <title>Slidev Presentations</title>
+              <style>
+                  body {
+                      font-family: system-ui, -apple-system, sans-serif;
+                      max-width: 800px;
+                      margin: 0 auto;
+                      padding: 2rem;
+                  }
+                  h1 {
+                      border-bottom: 1px solid #eee;
+                  }
+                  ul {
+                      list-style-type: none;
+                      padding: 0;
+                  }
+                  li {
+                      margin: 1rem 0;
+                      padding: 1rem;
+                      border: 1px solid #eee;
+                      border-radius: 8px;
+                  }
+                  a {
+                      color: #3b82f6;
+                      text-decoration: none;
+                  }
+                  a:hover {
+                      text-decoration: underline;
+                  }
+              </style>
+          </head>
+          <body>
+              <h1>Slidev Presentations</h1>
+              <ul>
+          EOF
+          
+          # Add links to each presentation
+          for dir in dist/*/; do
+            if [ -d "$dir" ]; then
+              dirname=$(basename "$dir")
+              echo "        <li><a href=\"./$dirname/\">$dirname</a></li>" >> dist/index.html
+            fi
+          done
+          
+          # Close HTML tags
+          cat >> dist/index.html << EOF
+              </ul>
+          </body>
+          </html>
+          EOF
+          
+          # Create a simple .nojekyll file to disable Jekyll processing
+          touch dist/.nojekyll
+      
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: gh-pages
